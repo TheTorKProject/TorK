@@ -1,0 +1,42 @@
+## TORK - Client Configuration File
+
+## Tor opens a socks proxy on port 9050 by default -- even if you don't
+## configure one below. Set "SocksPort 0" if you plan to run Tor only
+## as a relay, and not make any local application connections yourself.
+SocksPort 0.0.0.0:9051
+
+## Uncomment this to start the process in the background... or use
+## --runasdaemon 1 on the command line. This is ignored on Windows;
+## see the FAQ entry if you want Tor to run as an NT service.
+RunAsDaemon 0
+
+## The directory for keeping all the keys/etc. By default, we store
+## things in $HOME/.tor on Unix, and in Application Data\tor on Windows.
+DataDirectory /root/tor/tor_client
+
+## This is to prevent Tor from inicializing circuits automatically
+## The hash below was generated for the password "password"
+ControlPort 0.0.0.0:9061
+HashedControlPassword 16:A2DB210231073503602CDE197DF8378398C65A21B16C09FF74DC31BA8B
+
+
+__DisablePredictedCircuits 1
+__LeaveStreamsUnattached 1
+
+DormantOnFirstStartup 0
+DormantCanceledByStartup 1
+
+ClientBootstrapConsensusMaxInProgressTries 1
+
+## Logs go to stdout at level "notice" unless redirected by something
+## else, like one of the below lines. You can have as many Log lines as
+## you want.
+##
+## We advise using "notice" in most cases, since anything more verbose
+## may provide sensitive information to an attacker who obtains the logs.
+##
+Log notice stdout
+#Log debug file /tmp/tor_client_debug.log
+
+UseBridges 1
+ClientTransportPlugin tork exec /usr/src/tork/build/tork -m client -p 1088 --k_min 1 --ch_active 1

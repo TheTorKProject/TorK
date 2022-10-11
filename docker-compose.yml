@@ -1,0 +1,118 @@
+# This docker-compose is for development only!
+# For hard testing use the Docker setup available at tork-analysis/machine_setup
+# repository instead.
+version: "3.3"
+services:
+  compile:
+    image: tork:latest
+    build: ./
+    command: "sh -c '/usr/src/tork/Entrypoint.sh'"
+
+    volumes:
+      - .:/usr/src/tork:ro
+      - tork_src:/usr/src/tork/build
+
+  bridge:
+    image: tork:latest
+    build: ./
+    command: "sh -c 'tor -f /usr/src/tork/tor_confs/torrc_docker_bridge_clean'"
+
+    networks:
+      - network
+
+    ports:
+        - "8081:8081"
+        - "8085:9095"
+
+    volumes:
+      - .:/usr/src/tork:ro
+      - tork_src:/usr/src/tork/build
+      - ./pcap:/pcap
+
+    healthcheck:
+        test: pgrep tork
+        interval: 10s
+        timeout: 5s
+        retries: 3
+
+  client:
+    image: tork:latest
+    build: ./
+    command: "sh -c 'tor -f /usr/src/tork/tor_confs/torrc_docker_client_clean bridge \"tork $$(dig bridge +short):8081\"'"
+
+    networks:
+      - network
+
+    ports:
+        - "9051:9051"
+        - "9061:9061"
+        - "9091:9091"
+
+    volumes:
+      - .:/usr/src/tork:ro
+      - tork_src:/usr/src/tork/build
+
+    healthcheck:
+        test: pgrep tork
+        interval: 10s
+        timeout: 5s
+        retries: 3
+
+    depends_on:
+      bridge:
+        condition: service_healthy
+
+  another_client:
+    image: tork:latest
+    build: ./
+    command: "sh -c '/usr/src/tork/build/tork --mode chaff -A 1 --k_min 1 -B \"$$(dig bridge +short)\" -p 8081'"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+          memory: 256M
+
+    networks:
+      - network
+
+    volumes:
+      - .:/usr/src/tork:ro
+      - tork_src:/usr/src/tork/build
+
+    healthcheck:
+        test: pgrep tork
+        interval: 10s
+        timeout: 5s
+        retries: 3
+
+    depends_on:
+      bridge:
+        condition: service_healthy
+
+  yet_another_client:
+    image: tork:latest
+    build: ./
+    command: "sh -c '/usr/src/tork/build/tork --mode chaff -A 1 --k_min 1 -B \"$$(dig bridge +short)\" -p 8081'"
+
+    networks:
+      - network
+
+    volumes:
+      - .:/usr/src/tork:ro
+      - tork_src:/usr/src/tork/build
+
+    healthcheck:
+        test: pgrep tork
+        interval: 10s
+        timeout: 5s
+        retries: 3
+
+    depends_on:
+      bridge:
+        condition: service_healthy
+networks:
+  network:
+    driver: bridge
+
+volumes:
+  tork_src:
